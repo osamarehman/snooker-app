@@ -25,6 +25,7 @@ interface TableCardProps {
 
 type Format = "PER_MINUTE" | "PER_FRAME"
 type Payment = "CASH" | "ONLINE" | "CREDIT"
+type Status = "ONGOING" | "COMPLETED" | "PENDING_PAYMENT"
 type DueFees = "PLAYER1" | "PLAYER2" | null
 
 interface TableState {
