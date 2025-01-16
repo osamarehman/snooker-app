@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  phoneNumber String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Table {
+  id          String    @id @default(cuid())
+  tableNumber Int       @unique
+  matches     Match[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Match {
+  id            String    @id @default(cuid())
+  table         Table     @relation(fields: [tableId], references: [id])
+  tableId       String
+  player1       String
+  player2       String
+  loginTime     DateTime
+  logoutTime    DateTime?
+  format        Format    @default(PER_MINUTE)
+  frames        Int?      // Only used when format is PER_FRAME
+  totalTime     Int?      // In minutes, only used when format is PER_MINUTE
+  initialPrice  Float
+  hasDiscount   Boolean   @default(false)
+  discount      Float?    // Percentage
+  finalPrice    Float?
+  dueFees       DueFees?
+  paymentMethod Payment
+  status        Status    @default(ONGOING)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Format {
+  PER_MINUTE
+  PER_FRAME
+}
+
+enum DueFees {
+  PLAYER1
+  PLAYER2
+}
+
+enum Payment {
+  CASH
+  ONLINE
+  CREDIT
+}
+
+enum Status {
+  ONGOING
+  COMPLETED
+  PENDING_PAYMENT
+} 
