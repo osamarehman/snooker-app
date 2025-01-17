@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -51,7 +52,6 @@ export function SignUpForm() {
     try {
       setIsLoading(true)
       
-      // Sign up with Supabase
       const { error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -61,6 +61,7 @@ export function SignUpForm() {
             phone_number: values.phoneNumber,
             description: values.description,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
@@ -68,7 +69,7 @@ export function SignUpForm() {
         throw error
       }
 
-      router.push("/auth/verify-email")
+      router.push('/auth/verify-email')
     } catch (error) {
       console.error("Error:", error)
     } finally {
@@ -152,6 +153,24 @@ export function SignUpForm() {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Signing up..." : "Sign Up"}
         </Button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Already have an account?
+            </span>
+          </div>
+        </div>
+
+        <Link
+          href="/auth/login"
+          className="inline-flex w-full justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100"
+        >
+          Sign in
+        </Link>
       </form>
     </Form>
   )

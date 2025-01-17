@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { AuthError } from '@supabase/supabase-js'
+import { debounce } from "lodash"
+
 
 import {
   Form,
@@ -43,34 +45,43 @@ export function LoginForm() {
     },
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      })
+  // Add debounce to prevent rapid login attempts
+  const debouncedSubmit = useCallback(
+    debounce(async (values: z.infer<typeof formSchema>) => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const { error } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        })
 
-      if (error) {
-        throw error
-      }
-
-      router.push("/") // Redirect to home page after successful login
-      router.refresh()
-      // eslint-expect-error-next-line
-    } catch (error: unknown) {
-        if (error instanceof AuthError)
-        {
-            
-            setError(error?.message)
-        } else {
-            setError("Failed to Login")
+        if (error) {
+          if (error.message.includes('rate limit')) {
+            throw new Error('Please wait a moment before trying again')
+          }
+          throw error
         }
-    } finally {
-      setIsLoading(false)
-    }
+
+        router.push('/')
+        router.refresh()
+
+      } catch (error) {
+        if (error instanceof AuthError) {
+          setError(error?.message)
+        } else {
+          setError("Failed to Login")
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }, 1000), // 1 second delay between attempts
+    [router, supabase.auth]
+  )
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    debouncedSubmit(values)
   }
 
   return (
@@ -123,12 +134,23 @@ export function LoginForm() {
           {isLoading ? "Logging in..." : "Log in"}
         </Button>
 
-        <div className="text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="text-blue-600 hover:text-blue-500">
-            Sign up
-          </Link>
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Don't have an account?
+            </span>
+          </div>
         </div>
+
+        <Link
+          href="/auth/signup"
+          className="inline-flex w-full justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100"
+        >
+          Create an account
+        </Link>
       </form>
     </Form>
   )
