@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -11,8 +11,10 @@ import {
   Settings,
   HelpCircle,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 const routes = [
   {
@@ -48,8 +50,16 @@ const routes = [
 ]
 
 export function Sidebar() {
+  const router = useRouter()
+  const supabase = createClientComponentClient()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth/login')
+    router.refresh()
+  }
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen)
@@ -98,6 +108,18 @@ export function Sidebar() {
                   </div>
                 </Link>
               ))}
+              
+              <button
+                onClick={handleLogout}
+                className={cn(
+                  "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition text-zinc-400"
+                )}
+              >
+                <div className="flex items-center flex-1">
+                  <LogOut className="h-5 w-5 mr-3 text-red-500" />
+                  Logout
+                </div>
+              </button>
             </div>
           </div>
         </div>

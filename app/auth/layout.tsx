@@ -6,16 +6,28 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="container relative min-h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+    <div className="container p-6 md:p-0 relative min-h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
-        <div className="absolute inset-0 bg-zinc-900">
-          <Image
+        <div className="absolute inset-0 bg-zinc-900 h-screen">
+          <div className="relative lg:relative h-full w-full">
+             {/* <Image
             src="/images/auth-bg.jpg" // You'll need to add this image
             alt="Authentication background"
             fill
             className="object-cover opacity-50"
             priority
-          />
+          /> */}
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              className="h-full w-full object-cover opacity-50"
+            >
+              <source src="https://cdn.prod.website-files.com/66e9f80928808e4ea290d935/66fdc5cc68088f08feab66a2_Snooker%20stock%20video%20%282%29%20%281%29-transcode.webm" type="video/webm" />
+              <source src="https://cdn.prod.website-files.com/66e9f80928808e4ea290d935/66fdc5cc68088f08feab66a2_Snooker%20stock%20video%20%282%29%20%281%29-transcode.mp4" type="video/mp4" />
+            </video>
+          </div>
         </div>
         <div className="relative z-20 flex items-center text-lg font-medium">
           <svg
