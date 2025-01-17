@@ -1,0 +1,5 @@
+id,tableId,player1,player2,loginTime,logoutTime,format,frames,totalTime,initialPrice,hasDiscount,discount,finalPrice,dueFees,paymentMethod,status,createdAt,updatedAt
+cm5z7fnb0000e5x4ooblqysp8,cm5z7fcsu00065x4o5j1zrg2e,Test1,test2,2025-01-16 10:45:19.149,,PER_MINUTE,,,0,true,10,0,,CASH,COMPLETED,2025-01-16 10:45:25.309,2025-01-16 10:45:25.309
+cm5z7irko000g5x4ohd74lsjf,cm5z7fcsu00065x4o5j1zrg2e,test12,test11,2025-01-16 10:47:44.749,,PER_MINUTE,,,0,true,10,0,,CASH,ONGOING,2025-01-16 10:47:50.808,2025-01-16 10:47:50.808
+cm60fkwvq00015xxgnv4d7xmn,cm5z7fcsu00065x4o5j1zrg2e,test,test,2025-01-17 07:21:00.383,,PER_MINUTE,,,0,true,10,0,,CASH,ONGOING,2025-01-17 07:21:13.972,2025-01-17 07:21:13.972
+cm60gcqpj00035xxgf6gy54z5,cm5z7fcsu00065x4o5j1zrg2e,test1,test2t,2025-01-17 07:42:48.563,,PER_MINUTE,,,0,false,,0,,CASH,ONGOING,2025-01-17 07:42:52.471,2025-01-17 07:42:52.471

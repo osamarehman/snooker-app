@@ -1,12 +1,23 @@
 # PRD Implementation Status
 
-## 1. Authentication ✅
+## 1. Authentication 🟡
+
+### Implemented ✅
 - [x] Sign Up functionality
 - [x] Login functionality
 - [x] Forgot Password flow
 - [x] Email verification
-- [x] Route protection
-- [x] Session management
+- [x] Basic form validation
+- [x] Error handling
+- [x] Supabase integration
+
+### Pending 🔄
+- [ ] Authentication middleware/route protection
+- [ ] Automatic redirects for authenticated/unauthenticated users
+- [ ] Hide sidebar on auth pages
+- [ ] Proper navigation flow after auth actions
+- [ ] Session management
+- [ ] Loading states during auth operations
 
 ## 2. Home Page (Tables Overview) 🟡
 

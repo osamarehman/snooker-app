@@ -47,11 +47,11 @@ export async function middleware(req: NextRequest) {
       }
 
       // Clean up old cache entries
-      for (const [key, value] of sessionCache.entries()) {
+      Array.from(sessionCache.entries()).forEach(([key, value]) => {
         if (now - value.timestamp > CACHE_DURATION) {
           sessionCache.delete(key)
         }
-      }
+      })
     } catch (error) {
       console.error('Session check error:', error)
       // On error, assume no session
