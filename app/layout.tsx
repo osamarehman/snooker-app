@@ -5,8 +5,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { Toaster } from "sonner";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { UserNav } from "@/components/UserNav";
+// import { UserNav } from "@/components/UserNav";
 import { headers } from 'next/headers'
+import { Session } from '@supabase/supabase-js';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,7 +15,7 @@ const inter = Inter({ subsets: ["latin"] });
 const SESSION_CACHE_DURATION = 5 * 60 * 1000 
 
 let sessionCache: {
-  session: any;
+  session: Session | null;
   timestamp: number;
   path: string;
 } | null = null;

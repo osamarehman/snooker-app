@@ -24,7 +24,7 @@ export async function getOutstandingPayments() {
     .from('Match')
     .select('*')
     .eq('status', 'COMPLETED')
-    .eq('paymentMethod', 'CREDIT' || 'CASH')
+    .eq('paymentMethod', 'CASH')
     .order('createdAt', { ascending: false })
 
   if (error) throw error
@@ -38,7 +38,7 @@ export async function getCompletedMatches() {
     .from('Match')
     .select('*')
     .eq('status', 'COMPLETED')
-    .not('paymentMethod', 'eq', 'CREDIT' || 'CASH')
+    .not('paymentMethod', 'eq', 'CASH')
     .order('createdAt', { ascending: false })
     .limit(50)
 
