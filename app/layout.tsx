@@ -6,15 +6,17 @@ import { Toaster } from "sonner";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { UserNav } from "@/components/UserNav";
+import { headers } from 'next/headers'
 
 const inter = Inter({ subsets: ["latin"] });
 
-// Cache duration for session in layout
-const SESSION_CACHE_DURATION = 60 * 1000 // 1 minute
+// Cache duration for session in layout - 5 minutes
+const SESSION_CACHE_DURATION = 5 * 60 * 1000 
 
 let sessionCache: {
   session: any;
   timestamp: number;
+  path: string;
 } | null = null;
 
 export const metadata: Metadata = {
@@ -27,23 +29,35 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = createServerComponentClient({ cookies });
+  const headersList = headers()
+  const currentPath = headersList.get('x-pathname') || ''
   
-  // Check if we have a valid cached session
+  const supabase = createServerComponentClient({ cookies })
+  
+  // Check if we have a valid cached session for this path
   const now = Date.now()
   let session
-  
-  if (sessionCache && (now - sessionCache.timestamp) < SESSION_CACHE_DURATION) {
+
+  if (
+    sessionCache && 
+    sessionCache.path === currentPath && 
+    (now - sessionCache.timestamp) < SESSION_CACHE_DURATION
+  ) {
     session = sessionCache.session
   } else {
-    // Fetch new session
-    const { data: { session: newSession } } = await supabase.auth.getSession()
-    session = newSession
-    
-    // Update cache
-    sessionCache = {
-      session: newSession,
-      timestamp: now
+    try {
+      const { data: { session: newSession } } = await supabase.auth.getSession()
+      session = newSession
+      
+      // Update cache with path info
+      sessionCache = {
+        session: newSession,
+        timestamp: now,
+        path: currentPath
+      }
+    } catch (error) {
+      console.error('Session fetch error:', error)
+      session = null
     }
   }
 
@@ -52,7 +66,7 @@ export default async function RootLayout({
     '/auth/signup',
     '/auth/forgot-password',
     '/auth/verify-email'
-  ].includes(cookies().get('next-url')?.value || '')
+  ].includes(currentPath)
 
   return (
     <html lang="en">
@@ -70,5 +84,5 @@ export default async function RootLayout({
         <Toaster />
       </body>
     </html>
-  );
+  )
 }

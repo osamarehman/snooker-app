@@ -233,8 +233,8 @@ export function TableCard({ tableNumber }: TableCardProps) {
               <SelectValue placeholder="Select format" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="PER_MINUTE">Per Minute (₹10/min)</SelectItem>
-              <SelectItem value="PER_FRAME">Per Frame (₹400/frame)</SelectItem>
+              <SelectItem value="PER_MINUTE">Per Minute (Rs 10/min)</SelectItem>
+              <SelectItem value="PER_FRAME">Per Frame (Rs 400/frame)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -274,7 +274,7 @@ export function TableCard({ tableNumber }: TableCardProps) {
           </div>
           <div className="flex justify-between text-sm font-medium">
             <span>Initial Price:</span>
-            <span>₹{state.initialPrice}</span>
+            <span>{state.initialPrice}</span>
           </div>
         </div>
 
@@ -301,7 +301,7 @@ export function TableCard({ tableNumber }: TableCardProps) {
               />
               <div className="flex justify-between text-sm font-medium">
                 <span>Final Price:</span>
-                <span>₹{state.finalPrice || state.initialPrice}</span>
+                <span>Rs {state.finalPrice || state.initialPrice}</span>
               </div>
             </div>
           )}
