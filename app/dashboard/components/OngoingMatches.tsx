@@ -5,15 +5,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 // import { supabase } from "@/utils/supabase"
 import { getOngoingMatches } from "@/app/actions/matches"
+import { updateMatchStatus } from "@/app/actions/match"
 import type { Match } from "@/types/database"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from "next/navigation"
 // import type { Match } from '@/types/database'
 
-const supabase = createClientComponentClient<Match>()
-
-
+// const supabase = createClientComponentClient<Match>()
 
 export default function OngoingMatches() {
+  const router = useRouter()
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -34,17 +35,12 @@ export default function OngoingMatches() {
 
   async function handleLogout(matchId: string) {
     try {
-      const { error } = await supabase
-        .from('Match')
-        .update({ logoutTime: new Date().toISOString(), status: 'COMPLETED' })
-        .eq('id', matchId)
-
-        console.log(error)
-
-      if (error) throw error
-      loadMatches() // Refresh the list
+      await updateMatchStatus(matchId, "COMPLETED", new Date())
+      await loadMatches()
+      // Refresh the home page to show the available table
+      router.refresh()
     } catch (error) {
-      console.error('Error logging out match:', error)
+      console.error('Error updating match status:', error)
     }
   }
 

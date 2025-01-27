@@ -28,25 +28,39 @@ model Table {
 }
 
 model Match {
-  id            String    @id @default(cuid())
-  table         Table     @relation(fields: [tableId], references: [id])
+  id            String        @id @default(uuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   tableId       String
   player1       String
   player2       String
   loginTime     DateTime
   logoutTime    DateTime?
-  format        Format    @default(PER_MINUTE)
-  frames        Int?      // Only used when format is PER_FRAME
-  totalTime     Int?      // In minutes, only used when format is PER_MINUTE
-  initialPrice  Float
-  hasDiscount   Boolean   @default(false)
-  discount      Float?    // Percentage
+  format        Format
+  frames        Int?
+  timeMinutes   Int?
+  initialPrice  Float?
+  discount      Float?
+  hasDiscount   Boolean       @default(false)
   finalPrice    Float?
-  dueFees       DueFees?
-  paymentMethod Payment
-  status        Status    @default(ONGOING)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  paymentMethod Payment       @default(CASH)
+  paymentStatus PaymentStatus @default(PENDING)
+  status        Status
+  table         Table         @relation(fields: [tableId], references: [id])
+
+  @@index([tableId])
+}
+
+model Expense {
+  id          String       @id @default(uuid())
+  description String
+  tag         ExpenseTag
+  quantity    Int
+  rate        Float
+  amount      Float
+  date        DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 enum Format {
@@ -69,4 +83,17 @@ enum Status {
   ONGOING
   COMPLETED
   PENDING_PAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum ExpenseTag {
+  FOOD
+  MAINTENANCE
+  UTILITIES
+  SALARY
+  OTHER
 } 

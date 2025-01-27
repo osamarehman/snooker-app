@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { AuthError } from '@supabase/supabase-js'
+// import { AuthError } from '@supabase/supabase-js'
 
 import {
   Select,
@@ -18,9 +18,11 @@ import { Label } from "@/components/ui/label"
 import { createMatch, updateMatchStatus } from "@/app/actions/match"
 import { toast } from "sonner"
 import { getTableById } from "@/app/actions/table"
+// import { Match, PaymentStatus } from "@/types/database"
 
 interface TableCardProps {
   tableNumber: number
+  onMatchCreated?: () => void
 }
 
 type Format = "PER_MINUTE" | "PER_FRAME"
@@ -40,6 +42,7 @@ interface TableState {
   hasDiscount: boolean
   discount: number | null
   finalPrice: number | null
+  tableNumber: number
   dueFees: DueFees
   paymentMethod: Payment | null
   status: "ONGOING" | "COMPLETED" | "PENDING_PAYMENT"
@@ -49,7 +52,7 @@ interface TableState {
 const PRICE_PER_MINUTE = 10
 const PRICE_PER_FRAME = 400
 
-export function TableCard({ tableNumber }: TableCardProps) {
+export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
   const [state, setState] = useState<TableState>({
     player1: "",
     player2: "",
@@ -66,6 +69,7 @@ export function TableCard({ tableNumber }: TableCardProps) {
     paymentMethod: null,
     status: "COMPLETED",
     matchId: null,
+    tableNumber: tableNumber,
   })
 
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null)
@@ -193,8 +197,90 @@ export function TableCard({ tableNumber }: TableCardProps) {
     }
   }, [timer])
 
+  const handleCreateMatch = async () => {
+    try {
+      if (!tableId) {
+        toast.error("Table not found")
+        return
+      }
+
+      if (!state.paymentMethod) {
+        toast.error("Please select a payment method")
+        return
+      }
+
+      // const payload = {
+      //   tableId: tableId,
+      //   player1: state.player1,
+      //   player2: state.player2,
+      //   loginTime: state.loginTime!,
+      //   logoutTime: state.logoutTime,
+      //   format: state.format as Format,
+      //   frames: state.frames,
+      //   timeMinutes: state.totalTime,
+      //   initialPrice: state.initialPrice,
+      //   hasDiscount: state.hasDiscount,
+      //   discount: state.discount,
+      //   finalPrice: state.finalPrice ?? state.initialPrice,
+      //   paymentMethod: state.paymentMethod,
+      //   status: "ONGOING" as Status,
+      //   paymentStatus: state.paymentMethod === "CREDIT" ? "PENDING" : "PAID" as PaymentStatus
+
+      // }
+
+      const payload = {
+        tableId: tableId,
+        player1: state.player1,
+        player2: state.player2,
+        loginTime: state.loginTime!,
+        logoutTime: state.logoutTime,
+        format: state.format,
+        frames: state.frames,
+        timeMinutes: state.totalTime,
+        initialPrice: state.initialPrice,
+        hasDiscount: state.hasDiscount,
+        discount: state.discount ?? undefined,  // Convert null to undefined
+        finalPrice: state.finalPrice ?? state.initialPrice,
+        paymentMethod: state.paymentMethod,
+        status: "ONGOING" as const,  // Use const assertion
+        paymentStatus: (state.paymentMethod === "CREDIT" ? "PENDING" : "PAID") as string,
+        dueFees: state.dueFees  // Add missing required field
+      }
+      // @ts-expect-error paymentStatus is not defined in the type
+      const response = await createMatch(payload)
+      
+      if (response.success) {
+        toast.success("Match data saved successfully")
+        setState(prev => ({
+          ...prev,
+          matchId: response?.data?.id || null,
+          player1: "",
+          player2: "",
+          loginTime: null,
+          logoutTime: null,
+          format: "PER_MINUTE",
+          frames: null,
+          totalTime: null,
+          initialPrice: 0,
+          hasDiscount: false,
+          discount: null,
+          finalPrice: null,
+          dueFees: null,
+          paymentMethod: null,
+          status: "COMPLETED",
+        }))
+        onMatchCreated?.()
+      } else {
+        toast.error("Failed to save match data")
+      }
+    } catch (error) {
+      console.error('Failed to create match:', error)
+      toast.error("Failed to save match data")
+    }
+  }
+
   return (
-    <Card className="w-full">
+    <Card className="w-full border-2 border-gray-200 rounded-lg shadow-lg">
       <CardHeader>
         <CardTitle>Table #{tableNumber}</CardTitle>
       </CardHeader>
@@ -309,7 +395,7 @@ export function TableCard({ tableNumber }: TableCardProps) {
 
         {/* Payment Method */}
         <div className="space-y-2">
-          <Label>Payment Method</Label>
+          <Label>Payment Method <span className="text-red-500">*</span></Label>
           <Select
             value={state.paymentMethod || ""}
             onValueChange={value => 
@@ -373,68 +459,8 @@ export function TableCard({ tableNumber }: TableCardProps) {
           {(state.status === "ONGOING" || state.status === "PENDING_PAYMENT") && (
             <Button 
               className="flex-1"
-              onClick={async () => {
-                if (!tableId) {
-                  toast.error("Table not found")
-                  return
-                }
-
-                try {
-                  const matchData = {
-                    tableId,
-                    player1: state.player1,
-                    player2: state.player2,
-                    loginTime: state.loginTime!,
-                    logoutTime: state.logoutTime,
-                    format: state.format as Format,
-                    frames: state.frames,
-                    totalTime: state.totalTime,
-                    initialPrice: state.initialPrice,
-                    hasDiscount: state.hasDiscount,
-                    discount: state.discount,
-                    finalPrice: state.finalPrice ?? state.initialPrice,
-                    dueFees: state.dueFees,
-                    paymentMethod: state.paymentMethod! as Payment,
-                    status: "ONGOING" as Status,
-                  }
-
-                  const result = await createMatch(matchData)
-                  
-                  if (result.success && result.data) {
-                    toast.success("Match data saved successfully")
-                    setState(prev => ({
-                      ...prev,
-                      matchId: result.data.id,
-                      player1: "",
-                      player2: "",
-                      loginTime: null,
-                      logoutTime: null,
-                      format: "PER_MINUTE",
-                      frames: null,
-                      totalTime: null,
-                      initialPrice: 0,
-                      hasDiscount: false,
-                      discount: null,
-                      finalPrice: null,
-                      dueFees: null,
-                      paymentMethod: null,
-                      status: "COMPLETED",
-                    }))
-                  } else {
-                    throw new Error(result.error)
-                  }
-                  // eslint-expect-error-next-line
-                } catch (error: unknown) {
-                    if (error instanceof AuthError)
-                    {
-                        console.error("Error details:", error)
-                        toast.error(error.message)
-                        
-                    } else {
-                        toast.error("Failed to save match data")
-                    }
-                }
-              }}
+              onClick={handleCreateMatch}
+              disabled={!state.paymentMethod}
             >
               New Entry
             </Button>

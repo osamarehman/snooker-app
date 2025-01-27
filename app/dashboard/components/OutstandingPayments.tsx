@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button"
 import { getOutstandingPayments, updatePaymentStatus } from "@/app/actions/matches"
 import type { Match } from "@/types/database"
 
+const PRICE_PER_MINUTE = 10
+const PRICE_PER_FRAME = 400
+
 export default function OutstandingPayments() {
   const [payments, setPayments] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,6 +27,32 @@ export default function OutstandingPayments() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function calculateDuration(login: string, logout: string) {
+    const start = new Date(login)
+    const end = new Date(logout)
+    const diff = Math.floor((end.getTime() - start.getTime()) / 1000 / 60) // in minutes
+    return diff
+  }
+
+  function calculatePrice(match: Match): number {
+    if (match.format === 'PER_FRAME' && match.frames) {
+      const basePrice = match.frames * PRICE_PER_FRAME
+      return match.hasDiscount && match.discount 
+        ? basePrice * (1 - match.discount / 100)
+        : basePrice
+    }
+
+    if (match.format === 'PER_MINUTE' && match.logoutTime) {
+      const minutes = calculateDuration(String(match.loginTime), String(match.logoutTime))
+      const basePrice = minutes * PRICE_PER_MINUTE
+      return match.hasDiscount && match.discount 
+        ? basePrice * (1 - match.discount / 100)
+        : basePrice
+    }
+
+    return 0
   }
 
   async function handleMarkAsPaid(matchId: string) {
@@ -53,8 +82,14 @@ export default function OutstandingPayments() {
                   <h3 className="font-semibold">Table #{match.tableId}</h3>
                   <p>Players: {match.player1} vs {match.player2}</p>
                   <p>Format: {match.format === 'PER_MINUTE' ? 'Per Minute' : 'Per Frame'}</p>
+                  {match.format === 'PER_FRAME' ? (
+                    <p>Frames: {match.frames}</p>
+                  ) : (
+                    <p>Duration: {match.logoutTime && 
+                      `${calculateDuration(String(match.loginTime), String(match.logoutTime))} minutes`}</p>
+                  )}
                   <p className="font-medium text-red-600">
-                    Amount Due: ₹{match.finalPrice || match.initialPrice}
+                    Amount Due: Rs {calculatePrice(match).toFixed(2)}
                   </p>
                 </div>
                 <div className="text-right">

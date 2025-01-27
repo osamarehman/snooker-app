@@ -28,6 +28,30 @@ export async function initializeTables(count: number = 7) {
   }
 }
 
+export async function getAvailableTables() {
+  try {
+    // Get all tables that don't have any ongoing matches
+    const tables = await prisma.table.findMany({
+      where: {
+        NOT: {
+          matches: {
+            some: {
+              status: "ONGOING"
+            }
+          }
+        }
+      },
+      orderBy: {
+        tableNumber: 'asc'
+      }
+    })
+    return { success: true, data: tables }
+  } catch (error) {
+    console.error("Failed to get available tables:", error)
+    return { success: false, error: "Failed to get tables" }
+  }
+}
+
 export async function getTableById(tableNumber: number) {
   try {
     const table = await prisma.table.findFirst({

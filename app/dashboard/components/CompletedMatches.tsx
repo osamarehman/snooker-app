@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { getCompletedMatches } from "@/app/actions/matches"
 import type { Match } from "@/types/database"
 
+const PRICE_PER_MINUTE = 10
+const PRICE_PER_FRAME = 400
+
 export default function CompletedMatches() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,7 +31,26 @@ export default function CompletedMatches() {
     const start = new Date(login)
     const end = new Date(logout)
     const diff = Math.floor((end.getTime() - start.getTime()) / 1000 / 60) // in minutes
-    return `${diff} minutes`
+    return diff
+  }
+
+  function calculatePrice(match: Match): number {
+    if (match.format === 'PER_FRAME' && match.frames) {
+      const basePrice = match.frames * PRICE_PER_FRAME
+      return match.hasDiscount && match.discount 
+        ? basePrice * (1 - match.discount / 100)
+        : basePrice
+    }
+
+    if (match.format === 'PER_MINUTE' && match.logoutTime) {
+      const minutes = calculateDuration(String(match.loginTime), String(match.logoutTime))
+      const basePrice = minutes * PRICE_PER_MINUTE
+      return match.hasDiscount && match.discount 
+        ? basePrice * (1 - match.discount / 100)
+        : basePrice
+    }
+
+    return 0
   }
 
   if (loading) return <div>Loading...</div>
@@ -50,7 +72,7 @@ export default function CompletedMatches() {
                     <p>Frames: {match.frames}</p>
                   ) : (
                     <p>Duration: {match.logoutTime && 
-                      calculateDuration(match.loginTime, match.logoutTime)}</p>
+                      `${calculateDuration(String(match.loginTime), String(match.logoutTime))} minutes`}</p>
                   )}
                 </div>
                 <div className="text-right">
@@ -58,7 +80,7 @@ export default function CompletedMatches() {
                   <p>Payment: {match.paymentMethod}</p>
                   {match.hasDiscount && <p>Discount: {match.discount}%</p>}
                   <p className="font-medium text-green-600">
-                    Final Price: Rs {match.finalPrice || match.initialPrice}
+                    Final Price: Rs {calculatePrice(match).toFixed(2)}
                   </p>
                 </div>
               </div>

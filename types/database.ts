@@ -1,22 +1,36 @@
+export type Format = 'PER_MINUTE' | 'PER_FRAME'
+export type PaymentMethod = 'CASH' | 'ONLINE' | 'CREDIT'
+export type Status = 'ONGOING' | 'COMPLETED' | 'PENDING_PAYMENT'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'CANCELLED'
+
+export interface Table {
+  id: string
+  createdAt: Date
+  updatedAt: Date
+  tableNumber: number
+}
+
 export interface Match {
   id: string
+  createdAt: Date | string
+  updatedAt: Date | string
   tableId: string
+  tableNumber: number
   player1: string
   player2: string
-  loginTime: string
-  logoutTime: string | null
-  format: 'PER_MINUTE' | 'PER_FRAME'
-  frames?: number
-  totalTime?: number
-  initialPrice: number
+  loginTime: Date | string
+  logoutTime: Date | string | null
+  format: Format
+  frames: number | null
+  timeMinutes?: number | null
+  initialPrice: number | null
+  discount: number | null
   hasDiscount: boolean
-  discount?: number
-  finalPrice: number
-  dueFees?: string
-  paymentMethod: 'CASH' | 'CREDIT' | 'ONLINE'
-  status: 'ONGOING' | 'COMPLETED'
-  createdAt: string
-  updatedAt: string
+  finalPrice: number | null
+  paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
+  status: Status
+  table?: Table
 }
 
 export type NewMatch = Omit<Match, 'id' | 'createdAt'> 

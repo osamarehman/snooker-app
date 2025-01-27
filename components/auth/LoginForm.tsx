@@ -45,48 +45,54 @@ export function LoginForm() {
     },
   })
 
-  // Add debounce to prevent rapid login attempts
   const debouncedSubmit = useCallback(
-    debounce(async (values: z.infer<typeof formSchema>) => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        
-        const { error } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        })
+    (values: z.infer<typeof formSchema>) => {
+      const submit = async () => {
+        try {
+          setIsLoading(true)
+          setError(null)
+          
+          const { error } = await supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password,
+          })
 
-        if (error) {
-          if (error.message.includes('rate limit')) {
-            throw new Error('Please wait a moment before trying again')
+          if (error) {
+            if (error.message.includes('rate limit')) {
+              throw new Error('Please wait a moment before trying again')
+            }
+            throw error
           }
-          throw error
-        }
 
-        router.push('/')
-        router.refresh()
+          router.push('/')
+          router.refresh()
 
-      } catch (error) {
-        if (error instanceof AuthError) {
-          setError(error?.message)
-        } else {
-          setError("Failed to Login")
+        } catch (error) {
+          if (error instanceof AuthError) {
+            setError(error?.message)
+          } else {
+            setError("Failed to Login")
+          }
+        } finally {
+          setIsLoading(false)
         }
-      } finally {
-        setIsLoading(false)
       }
-    }, 1000), // 1 second delay between attempts
-    [router, supabase.auth]
+      
+      // Debounce the submit function
+      debounce(submit, 1000)()
+    },
+    [router, supabase.auth, setError, setIsLoading]
   )
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    const values = form.getValues()
     debouncedSubmit(values)
-  }
+  }, [debouncedSubmit, form])
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
