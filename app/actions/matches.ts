@@ -35,7 +35,7 @@ export async function getOngoingMatches(): Promise<Match[]> {
         logoutTime: match.logoutTime?.toISOString() || null,
         createdAt: match.createdAt.toISOString(),
         updatedAt: match.updatedAt.toISOString(),
-        paymentStatus: "PENDING" as PaymentStatus,
+        paymentStatus: match.paymentStatus,
       } as Match
     })
   } catch (error) {
@@ -82,8 +82,7 @@ export async function getCompletedMatches(): Promise<Match[]> {
   try {
     const matches = await prisma.match.findMany({
       where: {
-        status: "COMPLETED",
-        paymentStatus: "PAID"
+        status: "COMPLETED"
       },
       include: {
         table: true
@@ -145,4 +144,4 @@ export async function createMatch(payload: {
         throw error;
     }
     return data;
-} 
+}

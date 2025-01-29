@@ -75,19 +75,26 @@ export async function getTableMatches(tableId: string) {
   }
 }
 
-export async function updateMatchStatus(matchId: string, status: Status, logoutTime?: Date) {
+export async function updateMatchStatus(
+  matchId: string, 
+  status: Status, 
+  logoutTime?: Date,
+  paymentStatus?: PaymentStatus
+) {
   try {
     const match = await prisma.match.update({
       where: { id: matchId },
       data: {
         status,
         logoutTime,
+        paymentStatus: paymentStatus || undefined,
       },
     });
-    revalidatePath("/");
+    revalidatePath("/")
+    revalidatePath("/dashboard")
     return { success: true, data: match };
   } catch (error) {
     console.error("Failed to update match:", error);
     return { success: false, error: "Failed to update match" };
   }
-} 
+}

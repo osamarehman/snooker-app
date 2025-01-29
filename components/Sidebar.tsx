@@ -32,7 +32,7 @@ const routes = [
   {
     label: "Daily Expenses",
     icon: Receipt,
-    href: "/expenses",
+    href: "/dashboard/expenses",
     color: "text-pink-700",
   },
   {

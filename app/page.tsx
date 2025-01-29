@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { TableCard } from "@/components/TableCard"
-import { getAvailableTables } from "@/app/actions/table"
+import { getAvailableTables, initializeTables } from "@/app/actions/table"
 
 interface Table {
   id: string
@@ -19,9 +19,15 @@ export default function Home() {
 
   async function loadTables() {
     try {
+      // Initialize tables first
+      await initializeTables()
       const result = await getAvailableTables()
+      console.log('Load tables result:', result)
       if (result.success && result.data) {
+        console.log('Setting tables:', result.data)
         setTables(result.data)
+      } else {
+        console.error('Failed to load tables:', result)
       }
     } catch (error) {
       console.error('Failed to load tables:', error)

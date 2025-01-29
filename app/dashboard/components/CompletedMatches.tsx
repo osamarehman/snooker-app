@@ -62,10 +62,21 @@ export default function CompletedMatches() {
       ) : (
         matches.map((match) => (
           <Card key={match.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className={`p-6 ${match.paymentStatus === 'PENDING' ? 'bg-yellow-50' : ''}`}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-semibold">Table #{match.tableId}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold">Table #{match.tableId}</h3>
+                    {match.paymentStatus === 'PENDING' ? (
+                      <span className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                        Payment Pending
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                        Paid
+                      </span>
+                    )}
+                  </div>
                   <p>Players: {match.player1} vs {match.player2}</p>
                   <p>Format: {match.format === 'PER_MINUTE' ? 'Per Minute' : 'Per Frame'}</p>
                   {match.format === 'PER_FRAME' ? (
@@ -77,9 +88,9 @@ export default function CompletedMatches() {
                 </div>
                 <div className="text-right">
                   <p>Date: {new Date(match.createdAt).toLocaleDateString()}</p>
-                  <p>Payment: {match.paymentMethod}</p>
+                  <p>Payment Method: {match.paymentMethod}</p>
                   {match.hasDiscount && <p>Discount: {match.discount}%</p>}
-                  <p className="font-medium text-green-600">
+                  <p className={`font-medium ${match.paymentStatus === 'PENDING' ? 'text-yellow-600' : 'text-green-600'}`}>
                     Final Price: Rs {calculatePrice(match).toFixed(2)}
                   </p>
                 </div>
@@ -90,4 +101,4 @@ export default function CompletedMatches() {
       )}
     </div>
   )
-} 
+}

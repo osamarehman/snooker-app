@@ -67,7 +67,7 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
     finalPrice: null,
     dueFees: null,
     paymentMethod: null,
-    status: "COMPLETED",
+    status: "COMPLETED", // Initial state is COMPLETED (table available)
     matchId: null,
     tableNumber: tableNumber,
   })
@@ -132,8 +132,14 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
     }
 
     if (state.matchId) {
+      // If payment method is CREDIT, set status to PENDING_PAYMENT, otherwise COMPLETED
       const newStatus = state.paymentMethod === "CREDIT" ? "PENDING_PAYMENT" : "COMPLETED"
-      const result = await updateMatchStatus(state.matchId, newStatus as Status, new Date())
+      const result = await updateMatchStatus(
+        state.matchId, 
+        newStatus as Status, 
+        new Date(),
+        state.paymentMethod === "CREDIT" ? "PENDING" : "PAID" // Update payment status
+      )
       
       if (result.success) {
         setState(prev => ({
@@ -242,8 +248,8 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
         discount: state.discount ?? undefined,  // Convert null to undefined
         finalPrice: state.finalPrice ?? state.initialPrice,
         paymentMethod: state.paymentMethod,
-        status: "ONGOING" as const,  // Use const assertion
-        paymentStatus: (state.paymentMethod === "CREDIT" ? "PENDING" : "PAID") as string,
+        status: "ONGOING", // Always start as ONGOING
+        paymentStatus: "PENDING", // Always start as PENDING
         dueFees: state.dueFees  // Add missing required field
       }
       // @ts-expect-error paymentStatus is not defined in the type
@@ -267,7 +273,7 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
           finalPrice: null,
           dueFees: null,
           paymentMethod: null,
-          status: "COMPLETED",
+        status: "COMPLETED", // Reset to COMPLETED (table available)
         }))
         onMatchCreated?.()
       } else {
@@ -469,4 +475,4 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
       </CardContent>
     </Card>
   )
-} 
+}
