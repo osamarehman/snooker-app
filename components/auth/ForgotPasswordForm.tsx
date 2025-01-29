@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { AuthError } from '@supabase/supabase-js'
 
@@ -67,20 +68,36 @@ export function ForgotPasswordForm() {
 
   if (success) {
     return (
-      <div className="text-center">
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <p className="mb-4">
           Check your email for a password reset link.
         </p>
-        <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
-          Back to login
-        </Link>
-      </div>
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
+            Back to login
+          </Link>
+        </motion.div>
+      </motion.div>
     )
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <motion.form 
+        onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <FormField
           control={form.control}
           name="email"
@@ -95,23 +112,58 @@ export function ForgotPasswordForm() {
           )}
         />
 
-        {error && (
-          <div className="text-sm text-red-500">
-            {error}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              className="text-sm text-red-500"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Sending..." : "Send Reset Link"}
-        </Button>
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Sending...
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Send Reset Link
+              </motion.div>
+            )}
+          </Button>
+        </motion.div>
 
         <div className="text-center text-sm">
           Remember your password?{" "}
-          <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
-            Log in
-          </Link>
+          <motion.span
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="inline-block"
+          >
+            <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
+              Log in
+            </Link>
+          </motion.span>
         </div>
-      </form>
+      </motion.form>
     </Form>
   )
-} 
+}

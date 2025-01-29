@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { AuthError } from '@supabase/supabase-js'
 import { debounce } from "lodash"
@@ -92,7 +93,13 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <motion.form 
+        onSubmit={handleSubmit} 
+        className="space-y-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <FormField
           control={form.control}
           name="email"
@@ -121,11 +128,19 @@ export function LoginForm() {
           )}
         />
 
-        {error && (
-          <div className="text-sm text-red-500">
-            {error}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              className="text-sm text-red-500"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="flex items-center justify-end">
           <Link
@@ -136,9 +151,30 @@ export function LoginForm() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Logging in..." : "Log in"}
-        </Button>
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Logging in...
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Log in
+              </motion.div>
+            )}
+          </Button>
+        </motion.div>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -151,13 +187,18 @@ export function LoginForm() {
           </div>
         </div>
 
-        <Link
-          href="/auth/signup"
-          className="inline-flex w-full justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100"
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
         >
-          Create an account
-        </Link>
-      </form>
+          <Link
+            href="/auth/signup"
+            className="inline-flex w-full justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100"
+          >
+            Create an account
+          </Link>
+        </motion.div>
+      </motion.form>
     </Form>
   )
-} 
+}

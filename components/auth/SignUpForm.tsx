@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { AuthError } from '@supabase/supabase-js'
 import {
   Form,
   FormControl,
@@ -34,6 +36,7 @@ const formSchema = z.object({
 
 export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClientComponentClient()
 
@@ -72,6 +75,11 @@ export function SignUpForm() {
       router.push('/auth/verify-email')
     } catch (error) {
       console.error("Error:", error)
+      if (error instanceof AuthError) {
+        setError(error.message)
+      } else {
+        setError("Failed to sign up")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -79,7 +87,13 @@ export function SignUpForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <motion.form 
+        onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <FormField
           control={form.control}
           name="name"
@@ -150,9 +164,44 @@ export function SignUpForm() {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Signing up..." : "Sign Up"}
-        </Button>
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              className="text-sm text-red-500"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Signing up...
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Sign Up
+              </motion.div>
+            )}
+          </Button>
+        </motion.div>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -165,13 +214,18 @@ export function SignUpForm() {
           </div>
         </div>
 
-        <Link
-          href="/auth/login"
-          className="inline-flex w-full justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100"
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
         >
-          Sign in
-        </Link>
-      </form>
+          <Link
+            href="/auth/login"
+            className="inline-flex w-full justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100"
+          >
+            Sign in
+          </Link>
+        </motion.div>
+      </motion.form>
     </Form>
   )
-} 
+}
