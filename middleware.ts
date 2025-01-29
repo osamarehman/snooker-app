@@ -66,8 +66,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // Temporarily bypass authentication for testing
-  return res
+  // If user is not signed in and tries to access protected routes, redirect to login
+  if (!session && !isAuthPath) {
+    return NextResponse.redirect(new URL('/auth/login', req.url))
+  }
+
+  // Add the current path to the response headers for use in the layout
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-pathname', req.nextUrl.pathname)
+
+  // Continue with the modified response
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
 }
 
 // Configure which routes to run middleware on

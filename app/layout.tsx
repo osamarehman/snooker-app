@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { Toaster } from "sonner";
-// import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-// import { cookies } from "next/headers";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 // import { UserNav } from "@/components/UserNav";
 import { headers } from 'next/headers'
 // import { Session } from '@supabase/supabase-js';
@@ -33,34 +33,8 @@ export default async function RootLayout({
   const headersList = headers()
   const currentPath = headersList.get('x-pathname') || ''
   
-  // const supabase = createServerComponentClient({ cookies })
-  
-  // Check if we have a valid cached session for this path
-  // const now = Date.now()
-  // let session
-
-  // if (
-  //   sessionCache && 
-  //   sessionCache.path === currentPath && 
-  //   (now - sessionCache.timestamp) < SESSION_CACHE_DURATION
-  // ) {
-  //   session = sessionCache.session
-  // } else {
-  //   try {
-  //     const { data: { session: newSession } } = await supabase.auth.getSession()
-  //     session = newSession
-      
-  //     // Update cache with path info
-  //     sessionCache = {
-  //       session: newSession,
-  //       timestamp: now,
-  //       path: currentPath
-  //     }
-  //   } catch (error) {
-  //     console.error('Session fetch error:', error)
-  //     session = null
-  //   }
-  // }
+  const supabase = createServerComponentClient({ cookies })
+  const { data: { session } } = await supabase.auth.getSession()
 
   const isAuthPage = [
     '/auth/login',
@@ -72,11 +46,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {isAuthPage ? (
+        {isAuthPage || !session ? (
           children
         ) : (
           <div className="flex min-h-screen">
-              <Sidebar />
+            <Sidebar />
             <main className="flex-1">
               {children}
             </main>
