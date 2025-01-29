@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, Users, Layout, CreditCard, Tag, Calendar, CheckCircle2, AlertCircle } from "lucide-react"
+import {  Users, Layout, CreditCard, Tag, Calendar, CheckCircle2, AlertCircle } from "lucide-react"
 import { getCompletedMatches } from "@/app/actions/matches"
 import type { Match } from "@/types/database"
 

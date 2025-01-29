@@ -20,9 +20,7 @@ import {
   Hash, 
   DollarSign, 
   Calendar, 
-  Loader2,
   Receipt,
-  Settings,
   Utensils,
   Wrench,
   Lightbulb,
@@ -32,7 +30,7 @@ import {
 import { createExpense, getExpenses, type ExpenseFormData } from "@/app/actions/expenses"
 import type { Expense, ExpenseTag } from "@prisma/client"
 
-const EXPENSE_TAGS: { tag: ExpenseTag; icon: any; color: string }[] = [
+const EXPENSE_TAGS: { tag: ExpenseTag; icon: React.ElementType; color: string }[] = [
   { tag: "FOOD", icon: Utensils, color: "text-orange-500" },
   { tag: "MAINTENANCE", icon: Wrench, color: "text-blue-500" },
   { tag: "UTILITIES", icon: Lightbulb, color: "text-yellow-500" },

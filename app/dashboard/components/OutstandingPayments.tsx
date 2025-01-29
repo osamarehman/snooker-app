@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Layout, CreditCard, Tag, Calendar, Wallet, Loader2 } from "lucide-react"
+import { Users, Layout, CreditCard, Tag, Calendar, Wallet, Loader2 } from "lucide-react"
 import { getOutstandingPayments, updatePaymentStatus } from "@/app/actions/matches"
 import type { Match } from "@/types/database"
 
