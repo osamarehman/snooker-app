@@ -524,6 +524,7 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
                     className="w-full bg-secondary hover:bg-secondary/90 transition-colors"
                     onClick={handleCreateMatch}
                     disabled={!state.paymentMethod}
+                    variant="secondary"
                   >
                     New Entry
                   </Button>
