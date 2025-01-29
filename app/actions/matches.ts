@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 // import type { Match, PaymentStatus } from "@/types/database"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import type { Match, PaymentStatus } from "@/types/database"
+import type { Match } from "@/types/database"
 
 export async function getOngoingMatches(): Promise<Match[]> {
   try {
