@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -286,193 +287,252 @@ export function TableCard({ tableNumber, onMatchCreated }: TableCardProps) {
   }
 
   return (
-    <Card className="w-full border-2 border-gray-200 rounded-lg shadow-lg">
-      <CardHeader>
-        <CardTitle>Table #{tableNumber}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Player Names */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Player 1</Label>
-            <Input
-              placeholder="Enter name"
-              value={state.player1}
-              onChange={e => setState(prev => ({ ...prev, player1: e.target.value }))}
-              disabled={state.status === "ONGOING"}
-            />
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card className="w-full border-2 border-primary/10 rounded-lg shadow-lg bg-card hover:border-primary/20 transition-colors">
+        <CardHeader className="bg-muted/50 rounded-t-lg">
+          <CardTitle className="text-2xl font-bold text-primary">Table #{tableNumber}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Player Names */}
+          <div className="grid grid-cols-2 gap-4">
+            <motion.div 
+              className="space-y-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Label className="text-muted-foreground">Player 1</Label>
+              <Input
+                className="focus:ring-2 focus:ring-primary/20"
+                placeholder="Enter name"
+                value={state.player1}
+                onChange={e => setState(prev => ({ ...prev, player1: e.target.value }))}
+                disabled={state.status === "ONGOING"}
+              />
+            </motion.div>
+            <motion.div 
+              className="space-y-2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Label className="text-muted-foreground">Player 2</Label>
+              <Input
+                className="focus:ring-2 focus:ring-primary/20"
+                placeholder="Enter name"
+                value={state.player2}
+                onChange={e => setState(prev => ({ ...prev, player2: e.target.value }))}
+                disabled={state.status === "ONGOING"}
+              />
+            </motion.div>
           </div>
-          <div className="space-y-2">
-            <Label>Player 2</Label>
-            <Input
-              placeholder="Enter name"
-              value={state.player2}
-              onChange={e => setState(prev => ({ ...prev, player2: e.target.value }))}
-              disabled={state.status === "ONGOING"}
-            />
-          </div>
-        </div>
 
-        {/* Format Selection */}
-        <div className="space-y-2">
-          <Label>Format</Label>
-          <Select
-            value={state.format}
-            onValueChange={value => handleFormatChange(value as Format)}
-            disabled={state.status === "ONGOING"}
+          {/* Format Selection */}
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PER_MINUTE">Per Minute (Rs 10/min)</SelectItem>
-              <SelectItem value="PER_FRAME">Per Frame (Rs 400/frame)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Frames Input (only for PER_FRAME) */}
-        {state.format === "PER_FRAME" && (
-          <div className="space-y-2">
-            <Label>Number of Frames</Label>
+            <Label className="text-muted-foreground">Format</Label>
             <Select
-              value={state.frames?.toString() || ""}
-              onValueChange={handleFramesChange}
+              value={state.format}
+              onValueChange={value => handleFormatChange(value as Format)}
               disabled={state.status === "ONGOING"}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select frames" />
+                <SelectValue placeholder="Select format" />
               </SelectTrigger>
               <SelectContent>
-                {[1, 2, 3, 4, 5].map(n => (
-                  <SelectItem key={n} value={n.toString()}>
-                    {n} {n === 1 ? "Frame" : "Frames"}
-                  </SelectItem>
-                ))}
+                <SelectItem value="PER_MINUTE">Per Minute (Rs 10/min)</SelectItem>
+                <SelectItem value="PER_FRAME">Per Frame (Rs 400/frame)</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        )}
+          </motion.div>
 
-        {/* Time and Price Information */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Login Time:</span>
-            <span>{state.loginTime?.toLocaleTimeString() || "Not started"}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Total Time:</span>
-            <span>{state.totalTime ? `${state.totalTime} minutes` : "0 minutes"}</span>
-          </div>
-          <div className="flex justify-between text-sm font-medium">
-            <span>Initial Price:</span>
-            <span>{state.initialPrice}</span>
-          </div>
-        </div>
-
-        {/* Discount Section */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={state.hasDiscount}
-              onCheckedChange={(checked) => 
-                setState(prev => ({ ...prev, hasDiscount: checked as boolean }))
-              }
-              disabled={state.status === "COMPLETED"}
-            />
-            <Label>Apply Discount</Label>
-          </div>
-          {state.hasDiscount && (
+          {/* Frames Input (only for PER_FRAME) */}
+          {state.format === "PER_FRAME" && (
             <div className="space-y-2">
-              <Input
-                type="number"
-                placeholder="Discount %"
-                value={state.discount || ""}
-                onChange={e => handleDiscountChange(e.target.value)}
-                disabled={state.status === "COMPLETED"}
-              />
-              <div className="flex justify-between text-sm font-medium">
-                <span>Final Price:</span>
-                <span>Rs {state.finalPrice || state.initialPrice}</span>
-              </div>
+              <Label>Number of Frames</Label>
+              <Select
+                value={state.frames?.toString() || ""}
+                onValueChange={handleFramesChange}
+                disabled={state.status === "ONGOING"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frames" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <SelectItem key={n} value={n.toString()}>
+                      {n} {n === 1 ? "Frame" : "Frames"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
-        </div>
 
-        {/* Payment Method */}
-        <div className="space-y-2">
-          <Label>Payment Method <span className="text-red-500">*</span></Label>
-          <Select
-            value={state.paymentMethod || ""}
-            onValueChange={value => 
-              setState(prev => ({ ...prev, paymentMethod: value as Payment }))
-            }
-            disabled={state.status === "COMPLETED"}
+          {/* Time and Price Information */}
+          <motion.div 
+            className="space-y-2 p-3 bg-muted/20 rounded-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select payment method" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="CASH">Cash</SelectItem>
-              <SelectItem value="ONLINE">Online</SelectItem>
-              <SelectItem value="CREDIT">Credit</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Login Time:</span>
+              <span>{state.loginTime?.toLocaleTimeString() || "Not started"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Total Time:</span>
+              <span>{state.totalTime ? `${state.totalTime} minutes` : "0 minutes"}</span>
+            </div>
+            <div className="flex justify-between text-sm font-medium">
+              <span>Initial Price:</span>
+              <span>{state.initialPrice}</span>
+            </div>
+          </motion.div>
 
-        {/* Due Fees */}
-        {state.paymentMethod === "CREDIT" && (
+          {/* Discount Section */}
           <div className="space-y-2">
-            <Label>Due Fees (Loser)</Label>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={state.hasDiscount}
+                onCheckedChange={(checked) => 
+                  setState(prev => ({ ...prev, hasDiscount: checked as boolean }))
+                }
+                disabled={state.status === "COMPLETED"}
+              />
+              <Label>Apply Discount</Label>
+            </div>
+            {state.hasDiscount && (
+              <div className="space-y-2">
+                <Input
+                  type="number"
+                  placeholder="Discount %"
+                  value={state.discount || ""}
+                  onChange={e => handleDiscountChange(e.target.value)}
+                  disabled={state.status === "COMPLETED"}
+                />
+                <div className="flex justify-between text-sm font-medium">
+                  <span>Final Price:</span>
+                  <span>Rs {state.finalPrice || state.initialPrice}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Method */}
+          <div className="space-y-2">
+            <Label>Payment Method <span className="text-red-500">*</span></Label>
             <Select
-              value={state.dueFees || ""}
+              value={state.paymentMethod || ""}
               onValueChange={value => 
-                setState(prev => ({ ...prev, dueFees: value as DueFees }))
+                setState(prev => ({ ...prev, paymentMethod: value as Payment }))
               }
               disabled={state.status === "COMPLETED"}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select player" />
+                <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PLAYER1">{state.player1 || "Player 1"}</SelectItem>
-                <SelectItem value="PLAYER2">{state.player2 || "Player 2"}</SelectItem>
+                <SelectItem value="CASH">Cash</SelectItem>
+                <SelectItem value="ONLINE">Online</SelectItem>
+                <SelectItem value="CREDIT">Credit</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          {state.status === "COMPLETED" && (
-            <Button 
-              className="flex-1" 
-              onClick={handleLogin}
-              disabled={!state.player1 || !state.player2}
-            >
-              Log In
-            </Button>
+          {/* Due Fees */}
+          {state.paymentMethod === "CREDIT" && (
+            <div className="space-y-2">
+              <Label>Due Fees (Loser)</Label>
+              <Select
+                value={state.dueFees || ""}
+                onValueChange={value => 
+                  setState(prev => ({ ...prev, dueFees: value as DueFees }))
+                }
+                disabled={state.status === "COMPLETED"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select player" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PLAYER1">{state.player1 || "Player 1"}</SelectItem>
+                  <SelectItem value="PLAYER2">{state.player2 || "Player 2"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
-          {state.status === "ONGOING" && (
-            <Button 
-              className="flex-1" 
-              onClick={handleLogout}
-              variant="destructive"
-            >
-              Log Out
-            </Button>
-          )}
-          {(state.status === "ONGOING" || state.status === "PENDING_PAYMENT") && (
-            <Button 
-              className="flex-1"
-              onClick={handleCreateMatch}
-              disabled={!state.paymentMethod}
-            >
-              New Entry
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Action Buttons */}
+          <motion.div 
+            className="flex gap-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <AnimatePresence mode="wait">
+              {state.status === "COMPLETED" && (
+                <motion.div
+                  key="login"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex-1"
+                >
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90 transition-colors" 
+                    onClick={handleLogin}
+                    disabled={!state.player1 || !state.player2}
+                  >
+                    Log In
+                  </Button>
+                </motion.div>
+              )}
+              {state.status === "ONGOING" && (
+                <motion.div
+                  key="logout"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex-1"
+                >
+                  <Button 
+                    className="w-full"
+                    onClick={handleLogout}
+                    variant="destructive"
+                  >
+                    Log Out
+                  </Button>
+                </motion.div>
+              )}
+              {(state.status === "ONGOING" || state.status === "PENDING_PAYMENT") && (
+                <motion.div
+                  key="new-entry"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex-1"
+                >
+                  <Button 
+                    className="w-full bg-secondary hover:bg-secondary/90 transition-colors"
+                    onClick={handleCreateMatch}
+                    disabled={!state.paymentMethod}
+                  >
+                    New Entry
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }
