@@ -4,9 +4,9 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { Toaster } from "sonner";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider"
-import LoginPage from "./auth/login/page";
+import { redirect } from 'next/navigation'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,14 +21,16 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const cookieStore = cookies()
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
-  
   const supabase = createServerComponentClient({
     cookies: () => cookieStore
   })
   
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Get the current path
+  const headersList = await headers()
+  const pathname = headersList.get("x-invoke-path") || ""
+  
   const isAuthPage = [
     '/auth/login',
     '/auth/signup',
@@ -36,10 +38,9 @@ export default async function RootLayout({
     '/auth/reset-password',
   ].includes(pathname)
 
+  // Redirect to login if user is not authenticated and not on an auth page
   if (!user && !isAuthPage) {
-    return (
-      <LoginPage />
-    )
+    redirect('/auth/login')
   }
 
   return (
