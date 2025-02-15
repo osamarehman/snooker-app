@@ -4,6 +4,12 @@ import { useEffect } from "react"
 import { useOffline } from "@/hooks/useOffline"
 import { toast } from "sonner"
 
+
+
+declare interface PeriodicSyncManager {
+  register(tag: string, options?: { minInterval: number }): Promise<void>;
+}
+
 interface ServiceWorkerProviderProps {
   children: React.ReactNode;
 }
@@ -19,9 +25,10 @@ export function ServiceWorkerProvider({ children }: ServiceWorkerProviderProps) 
         .then((registration) => {
           console.log('Service Worker registered:', registration)
           
-          // Request sync permission
+          // Type guard for periodic sync
           if ('periodicSync' in registration) {
-            registration.periodicSync.register('syncData', {
+            const periodicSync = registration.periodicSync as PeriodicSyncManager;
+            periodicSync.register('syncData', {
               minInterval: 24 * 60 * 60 * 1000, // 24 hours
             }).catch(console.error)
           }

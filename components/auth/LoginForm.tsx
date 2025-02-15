@@ -4,7 +4,7 @@ import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { AuthError } from '@supabase/supabase-js'
-import { debounce } from "lodash"
+// import { debounce } from "lodash"
 
 
 import {
@@ -46,50 +46,42 @@ export function LoginForm() {
     },
   })
 
-  const debouncedSubmit = useCallback(
-    (values: z.infer<typeof formSchema>) => {
-      const submit = async () => {
-        try {
-          setIsLoading(true)
-          setError(null)
-          
-          const { error } = await supabase.auth.signInWithPassword({
-            email: values.email,
-            password: values.password,
-          })
-
-          if (error) {
-            if (error.message.includes('rate limit')) {
-              throw new Error('Please wait a moment before trying again')
-            }
-            throw error
-          }
-
-          router.push('/')
-          router.refresh()
-
-        } catch (error) {
-          if (error instanceof AuthError) {
-            setError(error?.message)
-          } else {
-            setError("Failed to Login")
-          }
-        } finally {
-          setIsLoading(false)
-        }
-      }
-      
-      // Debounce the submit function
-      debounce(submit, 1000)()
-    },
-    [router, supabase.auth, setError, setIsLoading]
-  )
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isLoading) return // Prevent multiple submissions
+    
     const values = form.getValues()
-    debouncedSubmit(values)
-  }, [debouncedSubmit, form])
+    
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      })
+
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          throw new Error('Please wait a moment before trying again')
+        }
+        throw error
+      }
+
+      router.push('/')
+      router.refresh()
+
+    } catch (error) {
+      if (error instanceof AuthError) {
+        setError(error?.message)
+      } else {
+        setError("Failed to Login")
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [form, isLoading, router, supabase.auth])
 
   return (
     <Form {...form}>
