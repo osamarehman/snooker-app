@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider"
+import LoginPage from "./auth/login/page";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,19 +38,7 @@ export default async function RootLayout({
 
   if (!user && !isAuthPage) {
     return (
-      <html lang="en">
-        <body className={inter.className}>
-          <main className="flex min-h-screen flex-col items-center justify-center p-24">
-            <h1 className="text-4xl font-bold mb-8">Please log in to continue</h1>
-            <a
-              href="/auth/login"
-              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Go to Login
-            </a>
-          </main>
-        </body>
-      </html>
+      <LoginPage />
     )
   }
 
