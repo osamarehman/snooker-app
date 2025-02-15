@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import type { Match, Table, Format, Status, PaymentStatus, PaymentMethod } from "@/types/database"
+import type { Match, Table, Format, Status, PaymentStatus, PaymentMethod as Payment } from "@/types/database"
 
 type ApiResponse<T> = {
   success: boolean;
@@ -141,13 +141,14 @@ type CreateMatchInput = {
   format: Format;
   status: Status;
   paymentStatus: PaymentStatus;
-  paymentMethod: PaymentMethod;
+  paymentMethod: Payment;
   hasDiscount: boolean;
   initialPrice: number;
   finalPrice: number | null;
   frames: number | null;
   timeMinutes: number | null;
   table?: Table;
+  // paymentMethod?: Payment;
 }
 
 export async function createMatch(matchData: CreateMatchInput): Promise<ApiResponse<MatchWithTable>> {

@@ -24,12 +24,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  password: z.string().min(1, {
-    message: "Password is required.",
-  }),
+  email: z.string().email(),
+  password: z.string().min(6),
 })
 
 export function LoginForm() {
@@ -99,7 +95,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your email" type="email" {...field} />
+                <Input placeholder="email@example.com" type="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -113,7 +109,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your password" type="password" {...field} />
+                <Input type="password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
