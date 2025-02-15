@@ -1,3 +1,5 @@
+declare let self: ServiceWorkerGlobalScope
+
 import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
 import { NetworkFirst, NetworkOnly } from 'workbox-strategies'
