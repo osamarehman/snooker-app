@@ -1,17 +1,24 @@
 "use server"
 
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-// import type { Match, PaymentStatus } from "@/types/database"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import type { Match } from "@/types/database"
+import type { Match, Table, Format, Status, PaymentStatus, PaymentMethod } from "@/types/database"
 
-export async function getOngoingMatches(): Promise<Match[]> {
+type ApiResponse<T> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+type MatchWithTable = Match & {
+  table: Table;
+}
+
+export async function getOngoingMatches(): Promise<ApiResponse<MatchWithTable[]>> {
   try {
     const matches = await prisma.match.findMany({
       where: {
-        status: "ONGOING"
+        status: 'ONGOING'
       },
       include: {
         table: true
@@ -21,30 +28,25 @@ export async function getOngoingMatches(): Promise<Match[]> {
       }
     })
 
-    return matches.map((match) => {
-      // Calculate timeMinutes based on login and logout times
-      const timeMinutes = match.logoutTime 
-        ? Math.round((match.logoutTime.getTime() - match.loginTime.getTime()) / (1000 * 60))
-        : Math.round((new Date().getTime() - match.loginTime.getTime()) / (1000 * 60));
-
-      return {
-        ...match,
-        tableNumber: match.table.tableNumber,
-        timeMinutes,
-        loginTime: match.loginTime.toISOString(),
-        logoutTime: match.logoutTime?.toISOString() || null,
-        createdAt: match.createdAt.toISOString(),
-        updatedAt: match.updatedAt.toISOString(),
-        paymentStatus: match.paymentStatus,
-      } as Match
-    })
+    return {
+      success: true,
+      data: matches
+    }
   } catch (error) {
-    console.error("Failed to fetch ongoing matches:", error)
-    throw error
+    console.error('Error fetching ongoing matches:', error)
+    return {
+      success: false,
+      error: 'Failed to fetch ongoing matches'
+    }
   }
 }
 
-export async function getOutstandingPayments(): Promise<Match[]> {
+type OutstandingMatch = MatchWithTable & {
+  tableNumber: number;
+  timeMinutes: number;
+}
+
+export async function getOutstandingPayments(): Promise<OutstandingMatch[]> {
   try {
     const matches = await prisma.match.findMany({
       where: {
@@ -61,7 +63,7 @@ export async function getOutstandingPayments(): Promise<Match[]> {
       }
     })
 
-    return matches.map(match => {
+    return matches.map((match: MatchWithTable) => {
       const timeMinutes = match.logoutTime 
         ? Math.round((match.logoutTime.getTime() - match.loginTime.getTime()) / (1000 * 60))
         : Math.round((new Date().getTime() - match.loginTime.getTime()) / (1000 * 60));
@@ -70,7 +72,7 @@ export async function getOutstandingPayments(): Promise<Match[]> {
         ...match,
         tableNumber: match.table.tableNumber,
         timeMinutes,
-      } as Match
+      }
     })
   } catch (error) {
     console.error("Failed to fetch outstanding payments:", error)
@@ -78,70 +80,101 @@ export async function getOutstandingPayments(): Promise<Match[]> {
   }
 }
 
-export async function getCompletedMatches(): Promise<Match[]> {
+export async function getCompletedMatches(): Promise<ApiResponse<MatchWithTable[]>> {
   try {
     const matches = await prisma.match.findMany({
       where: {
-        status: "COMPLETED"
+        status: 'COMPLETED'
       },
       include: {
         table: true
       },
       orderBy: {
-        createdAt: "desc"
+        updatedAt: 'desc'
       }
     })
 
-    return matches.map(match => {
-      const timeMinutes = match.logoutTime 
-        ? Math.round((match.logoutTime.getTime() - match.loginTime.getTime()) / (1000 * 60))
-        : Math.round((new Date().getTime() - match.loginTime.getTime()) / (1000 * 60));
-
-      return {
-        ...match,
-        tableNumber: match.table.tableNumber,
-        timeMinutes,
-      } as Match
-    })
+    // findMany always returns an array, even if empty
+    return {
+      success: true,
+      data: matches || []
+    }
   } catch (error) {
-    console.error("Failed to fetch completed matches:", error)
-    throw error
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch completed matches'
+    console.error('Error fetching completed matches:', errorMessage)
+    return {
+      success: false,
+      error: errorMessage
+    }
   }
 }
 
-export async function updatePaymentStatus(matchId: string) {
+export async function updatePaymentStatus(matchId: string): Promise<ApiResponse<Match>> {
   try {
     const match = await prisma.match.update({
       where: { id: matchId },
       data: {
-        status: "COMPLETED",
-        paymentStatus: "PAID",
+        status: "COMPLETED" as Status,
+        paymentStatus: "PAID" as PaymentStatus,
         updatedAt: new Date()
+      },
+      include: {
+        table: true
       }
     })
     revalidatePath("/dashboard")
     return { success: true, data: match }
   } catch (error) {
     console.error("Failed to update payment status:", error)
-    throw error
+    return {
+      success: false,
+      error: "Failed to update payment status"
+    }
   }
 }
 
-export async function createMatch(payload: {
-    table_no: string;
-    player1: string;
-    player2: string;
-    // Add other necessary fields here
-}) {
-    const supabase = createServerComponentClient({ cookies });
-    const { data, error } = await supabase
-        .from("Match")
-        .insert([payload])
-        .select();
+type CreateMatchInput = {
+  tableId: string;
+  player1: string;
+  player2: string;
+  loginTime: string;
+  format: Format;
+  status: Status;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  hasDiscount: boolean;
+  initialPrice: number;
+  finalPrice: number | null;
+  frames: number | null;
+  timeMinutes: number | null;
+  table?: Table;
+}
 
-    if (error) {
-        console.error("Error creating match:", error);
-        throw error;
+export async function createMatch(matchData: CreateMatchInput): Promise<ApiResponse<MatchWithTable>> {
+  try {
+    // eslint-disable-line react-hooks/exhaustive-deps
+    const { table: __unusedTable, ...createData } = matchData
+
+    console.log(__unusedTable)
+
+    const match = await prisma.match.create({
+      data: createData,
+      include: {
+        table: true
+      }
+    })
+
+    revalidatePath("/dashboard")
+    
+    return {
+      success: true,
+      data: match
     }
-    return data;
+  } catch (error) {
+    console.error("Error creating match:", error)
+    return {
+      success: false,
+      error: "Failed to create match"
+    }
+  }
 }

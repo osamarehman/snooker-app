@@ -1,7 +1,29 @@
-export type Format = 'PER_MINUTE' | 'PER_FRAME'
-export type PaymentMethod = 'CASH' | 'ONLINE' | 'CREDIT'
-export type Status = 'ONGOING' | 'COMPLETED' | 'PENDING_PAYMENT'
-export type PaymentStatus = 'PENDING' | 'PAID' | 'CANCELLED'
+export interface Match {
+  id: string
+  createdAt: Date
+  updatedAt: Date
+  tableId: string
+  player1: string
+  player2: string
+  loginTime: Date
+  logoutTime: Date | null
+  format: Format
+  frames: number | null
+  timeMinutes: number | null
+  hasDiscount: boolean
+  discount: number | null
+  initialPrice: number
+  finalPrice: number | null
+  paymentMethod: PaymentMethod | null
+  paymentStatus: PaymentStatus
+  status: Status
+  table: Table
+}
+
+export type Format = "PER_MINUTE" | "PER_FRAME"
+export type PaymentMethod = "CASH" | "CARD" | "ONLINE" | "CREDIT"
+export type PaymentStatus = "PENDING" | "PAID"
+export type Status = "ONGOING" | "COMPLETED" | "PENDING_PAYMENT"
 
 export interface Table {
   id: string
@@ -10,27 +32,16 @@ export interface Table {
   tableNumber: number
 }
 
-export interface Match {
-  id: string
-  createdAt: Date | string
-  updatedAt: Date | string
-  tableId: string
-  tableNumber: number
-  player1: string
-  player2: string
-  loginTime: Date | string
-  logoutTime: Date | string | null
-  format: Format
-  frames: number | null
-  timeMinutes?: number | null
-  initialPrice: number | null
-  discount: number | null
-  hasDiscount: boolean
-  finalPrice: number | null
-  paymentMethod: PaymentMethod
-  paymentStatus: PaymentStatus
-  status: Status
-  table?: Table
+export type NewMatch = Omit<Match, 'id' | 'createdAt'> 
+
+type DateToString<T> = T extends Date ? string : T extends Date | null ? string | null : T;
+
+export type IndexedDBMatch = {
+  [K in keyof Match]: K extends 'table' 
+    ? IndexedDBTable 
+    : DateToString<Match[K]>
 }
 
-export type NewMatch = Omit<Match, 'id' | 'createdAt'> 
+export type IndexedDBTable = {
+  [K in keyof Table]: DateToString<Table[K]>
+} 

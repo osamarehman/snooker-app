@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["metrics"]
 }
 
 datasource db {
@@ -39,7 +40,7 @@ model Match {
   format        Format
   frames        Int?
   timeMinutes   Int?
-  initialPrice  Float?
+  initialPrice  Float         @default(0)
   discount      Float?
   hasDiscount   Boolean       @default(false)
   finalPrice    Float?

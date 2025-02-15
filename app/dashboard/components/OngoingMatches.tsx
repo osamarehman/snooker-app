@@ -4,19 +4,24 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Layout, CreditCard, Tag } from "lucide-react"
+import { Users, Layout, CreditCard, Tag, Calendar, Clock, Loader2 } from "lucide-react"
 import { getOngoingMatches } from "@/app/actions/matches"
-import { updateMatchStatus } from "@/app/actions/match"
 import type { Match } from "@/types/database"
-import { useRouter } from "next/navigation"
-// import type { Match } from '@/types/database'
+import { toast } from "sonner"
+import { offlineSync } from "@/utils/offlineSync"
+import { db } from "@/utils/indexedDB"
+import { EditMatchDialog } from "./EditMatchDialog"
+import type { IndexedDBMatch } from "@/types/database"
+// import type { ApiResponse } from "@/types"
 
-// const supabase = createClientComponentClient<Match>()
+type FormattedMatch = Match & {
+  tableNumber: number;
+}
 
 export default function OngoingMatches() {
-  const router = useRouter()
-  const [matches, setMatches] = useState<Match[]>([])
+  const [matches, setMatches] = useState<FormattedMatch[]>([])
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState<string | null>(null)
 
   useEffect(() => {
     loadMatches()
@@ -24,23 +29,125 @@ export default function OngoingMatches() {
 
   async function loadMatches() {
     try {
-      const data = await getOngoingMatches()
-      setMatches(data)
+      const result = await getOngoingMatches()
+      if (result?.success && result.data) {
+        const formattedMatches = result.data.map((match: Match) => ({
+          ...match,
+          tableNumber: match.table.tableNumber,
+          initialPrice: match.initialPrice || 0
+        })) as FormattedMatch[]
+        setMatches(formattedMatches)
+      }
     } catch (error) {
       console.error('Error loading matches:', error)
+      toast.error("Failed to load matches")
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleLogout(matchId: string) {
+  function calculateDuration(login: Date) {
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - login.getTime()) / 1000 / 60) // in minutes
+    return diff
+  }
+
+  function formatLocalTime(date: Date) {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).format(date)
+  }
+
+  async function handleEndMatch(matchId: string) {
     try {
-      await updateMatchStatus(matchId, "COMPLETED", new Date())
-      await loadMatches()
-      // Refresh the home page to show the available table
-      router.refresh()
+      setUpdating(matchId)
+      
+      const logoutTime = new Date()
+
+      // Update local state immediately
+      setMatches(prev => prev.filter(m => m.id !== matchId))
+
+      // Queue the update action for sync
+      await offlineSync.queueAction({
+        type: 'UPDATE_MATCH',
+        payload: {
+          id: matchId,
+          status: "COMPLETED",
+          logoutTime: logoutTime.toISOString()
+        },
+        endpoint: `/api/matches/${matchId}`,
+        method: 'PATCH'
+      })
+
+      // Update IndexedDB
+      const existingMatch = await db.getById('matches', matchId)
+      if (existingMatch) {
+        await db.upsert('matches', {
+          ...existingMatch,
+          status: "COMPLETED",
+          logoutTime: logoutTime.toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+      }
+
+      toast.success("Match ended successfully")
     } catch (error) {
-      console.error('Error updating match status:', error)
+      console.error('Error ending match:', error)
+      toast.error("Failed to end match")
+      
+      // Revert local state on error
+      loadMatches()
+    } finally {
+      setUpdating(null)
+    }
+  }
+
+  async function handleUpdateMatch(matchId: string, updates: Partial<Match>) {
+    try {
+      // Update local state immediately
+      setMatches(prev => prev.map(match => 
+        match.id === matchId ? { ...match, ...updates } : match
+      ))
+
+      // Queue the update action for sync
+      await offlineSync.queueAction({
+        type: 'UPDATE_MATCH',
+        payload: {
+          id: matchId,
+          ...updates
+        },
+        endpoint: `/api/matches/${matchId}`,
+        method: 'PATCH'
+      })
+
+      // Update IndexedDB
+      const existingMatch = await db.getById('matches', matchId) as IndexedDBMatch | undefined
+      if (existingMatch) {
+        const updatedMatch: IndexedDBMatch = {
+          ...existingMatch,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+          createdAt: existingMatch.createdAt.toString(),
+          loginTime: existingMatch.loginTime.toString(),
+          logoutTime: existingMatch.logoutTime?.toString() || null,
+          table: {
+            ...existingMatch.table,
+            createdAt: existingMatch.table.createdAt.toString(),
+            updatedAt: existingMatch.table.updatedAt.toString()
+          }
+        }
+        await db.upsert('matches', updatedMatch)
+      }
+
+      toast.success("Match updated successfully")
+    } catch (error) {
+      console.error('Error updating match:', error)
+      toast.error("Failed to update match")
+      
+      // Revert local state on error
+      loadMatches()
     }
   }
 
@@ -58,7 +165,7 @@ export default function OngoingMatches() {
           className="w-12 h-12 border-4 border-primary rounded-full border-t-transparent animate-spin"
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -70,10 +177,10 @@ export default function OngoingMatches() {
           exit={{ opacity: 0, scale: 0.8 }}
           className="flex flex-col items-center justify-center p-8 space-y-4 bg-muted/20 rounded-lg"
         >
-          <Layout className="w-12 h-12 text-muted-foreground" />
+          <Clock className="w-12 h-12 text-muted-foreground" />
           <h2 className="text-xl font-semibold text-primary">No Ongoing Matches</h2>
           <p className="text-muted-foreground text-center">
-            There are currently no active matches in progress.
+            There are no matches in progress at the moment.
           </p>
         </motion.div>
       ) : (
@@ -91,18 +198,40 @@ export default function OngoingMatches() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="overflow-hidden hover:shadow-lg transition-all">
-                <CardHeader className="bg-muted/50">
+              <Card className="overflow-hidden hover:shadow-lg transition-all border-green-200">
+                <CardHeader className="bg-green-50/50">
                   <CardTitle className="flex items-center justify-between">
-                    <span className="text-primary">Table #{match.tableId}</span>
-                    <Button 
-                      onClick={() => handleLogout(match.id)}
-                      variant="destructive"
-                      size="sm"
-                      className="hover:scale-105 transition-transform"
-                    >
-                      Log Out
-                    </Button>
+                    <div className="flex flex-col">
+                      <span className="text-primary">Table #{match.tableNumber}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Started at {formatLocalTime(new Date(match.loginTime))}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full">
+                        <Clock className="w-4 h-4" />
+                        In Progress
+                      </div>
+                      <EditMatchDialog 
+                        match={match}
+                        onUpdate={handleUpdateMatch}
+                      />
+                      <Button 
+                        onClick={() => handleEndMatch(match.id)}
+                        variant="destructive"
+                        size="sm"
+                        disabled={updating === match.id}
+                      >
+                        {updating === match.id ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Ending...</span>
+                          </div>
+                        ) : (
+                          'End Match'
+                        )}
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -123,19 +252,19 @@ export default function OngoingMatches() {
                     </div>
 
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span>Started: {new Date(match.loginTime).toLocaleTimeString()}</span>
+                      <Calendar className="w-4 h-4" />
+                      <span>Duration: {calculateDuration(match.loginTime)} minutes</span>
                     </div>
 
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <CreditCard className="w-4 h-4" />
-                      <span>Payment: {match.paymentMethod}</span>
+                      <span>Payment Method: {match.paymentMethod}</span>
                     </div>
 
-                    {match.hasDiscount && (
+                    {match.hasDiscount && match.discount && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Tag className="w-4 h-4" />
-                        <span>Discount: {match.discount}%</span>
+                        <span>Discount Applied: {match.discount}%</span>
                       </div>
                     )}
                   </div>
@@ -147,4 +276,4 @@ export default function OngoingMatches() {
       )}
     </AnimatePresence>
   )
-}
+} 

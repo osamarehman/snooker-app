@@ -5,14 +5,21 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Users, Layout, CreditCard, Tag, Calendar, Wallet, Loader2 } from "lucide-react"
-import { getOutstandingPayments, updatePaymentStatus } from "@/app/actions/matches"
+import { getOutstandingPayments } from "@/app/actions/matches"
 import type { Match } from "@/types/database"
+import { toast } from "sonner"
+import { offlineSync } from "@/utils/offlineSync"
+import { db } from "@/utils/indexedDB"
 
-const PRICE_PER_MINUTE = 10
-const PRICE_PER_FRAME = 400
+const PRICE_PER_MINUTE = 20
+const PRICE_PER_FRAME = 200
+
+type FormattedMatch = Match & {
+  tableNumber: number;
+}
 
 export default function OutstandingPayments() {
-  const [payments, setPayments] = useState<Match[]>([])
+  const [payments, setPayments] = useState<FormattedMatch[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
 
@@ -23,7 +30,12 @@ export default function OutstandingPayments() {
   async function loadPayments() {
     try {
       const data = await getOutstandingPayments()
-      setPayments(data)
+      const formattedPayments = data.map(payment => ({
+        ...payment,
+        tableNumber: payment.table.tableNumber,
+        initialPrice: payment.initialPrice || 0
+      })) as FormattedMatch[]
+      setPayments(formattedPayments)
     } catch (error) {
       console.error('Error loading payments:', error)
     } finally {
@@ -38,7 +50,7 @@ export default function OutstandingPayments() {
     return diff
   }
 
-  function calculatePrice(match: Match): number {
+  function calculatePrice(match: FormattedMatch): number {
     if (match.format === 'PER_FRAME' && match.frames) {
       const basePrice = match.frames * PRICE_PER_FRAME
       return match.hasDiscount && match.discount 
@@ -60,10 +72,38 @@ export default function OutstandingPayments() {
   async function handleMarkAsPaid(matchId: string) {
     try {
       setUpdating(matchId)
-      await updatePaymentStatus(matchId)
-      await loadPayments() // Refresh the list
+      
+      // Update local state immediately
+      setPayments(prev => prev.filter(p => p.id !== matchId))
+
+      // Queue the update action for sync
+      await offlineSync.queueAction({
+        type: 'UPDATE_MATCH',
+        payload: {
+          id: matchId,
+          status: "COMPLETED",
+          paymentStatus: "PAID",
+          updatedAt: new Date().toISOString()
+        },
+        endpoint: `/api/matches/${matchId}`,
+        method: 'PATCH'
+      })
+
+      // Update IndexedDB
+      const existingMatch = await db.getById('matches', matchId)
+      if (existingMatch) {
+        await db.upsert('matches', {
+          ...existingMatch,
+          status: "COMPLETED",
+          paymentStatus: "PAID",
+          updatedAt: new Date().toISOString()
+        })
+      }
+
+      toast.success("Payment marked as paid")
     } catch (error) {
       console.error('Error updating payment status:', error)
+      toast.error("Failed to update payment status")
     } finally {
       setUpdating(null)
     }
@@ -119,7 +159,7 @@ export default function OutstandingPayments() {
               <Card className="overflow-hidden hover:shadow-lg transition-all border-red-200">
                 <CardHeader className="bg-red-50/50">
                   <CardTitle className="flex items-center justify-between">
-                    <span className="text-primary">Table #{match.tableId}</span>
+                    <span className="text-primary">Table #{match.tableNumber}</span>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">
                         <Wallet className="w-4 h-4" />

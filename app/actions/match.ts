@@ -4,56 +4,58 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { Format, Payment, Status, PaymentStatus } from "@prisma/client"
 
-interface CreateMatchData {
+interface CreateMatchInput {
   tableId: string
   player1: string
   player2: string
-  loginTime: Date
-  logoutTime: Date | null
-  format: Format
+  loginTime: string
+  format: string
+  status: string
+  paymentStatus: string
+  paymentMethod: string
+  hasDiscount: boolean
+  initialPrice?: number
+  finalPrice?: number | null
   frames?: number | null
   timeMinutes?: number | null
-  initialPrice: number
-  hasDiscount: boolean
-  discount?: number | null
-  finalPrice?: number | null
-  paymentMethod: Payment
-  status: Status
-  paymentStatus?: PaymentStatus
 }
 
-export async function createMatch(payload: CreateMatchData) {
+export async function createMatch(data: CreateMatchInput) {
   try {
-    const data = await prisma.match.create({
+    const match = await prisma.match.create({
       data: {
-        player1: payload.player1,
-        player2: payload.player2,
-        loginTime: payload.loginTime,
-        logoutTime: payload.logoutTime,
-        format: payload.format,
-        frames: payload.frames,
-        timeMinutes: payload.timeMinutes,
-        initialPrice: payload.initialPrice,
-        hasDiscount: payload.hasDiscount,
-        discount: payload.discount,
-        finalPrice: payload.finalPrice,
-        paymentMethod: payload.paymentMethod,
-        status: payload.status,
-        paymentStatus: payload.paymentStatus || "PENDING",
+        loginTime: new Date(data.loginTime),
+        initialPrice: data.initialPrice || 0,
+        finalPrice: data.finalPrice || null,
+        frames: data.frames || null,
+        timeMinutes: data.timeMinutes || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        player1: data.player1,
+        player2: data.player2,
+        format: data.format as Format,
+        status: data.status as Status,
+        paymentStatus: data.paymentStatus as PaymentStatus,
+        paymentMethod: data.paymentMethod as Payment,
+        hasDiscount: data.hasDiscount,
         table: {
           connect: {
-            id: payload.tableId
+            id: data.tableId
           }
         }
       },
-    });
+      include: {
+        table: true
+      }
+    })
 
-    revalidatePath("/")
-    revalidatePath("/dashboard")
-    return { success: true, data };
+    revalidatePath('/')
+    revalidatePath('/dashboard')
+    
+    return { success: true, data: match }
   } catch (error) {
-    console.error('Server error:', error);
-    return { success: false, error: 'Failed to create match' };
+    console.error('Failed to create match:', error)
+    return { success: false, error: 'Failed to create match' }
   }
 }
 
