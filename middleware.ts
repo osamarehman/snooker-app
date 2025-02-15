@@ -59,15 +59,20 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  const isAuthPath = publicPaths.includes(req.nextUrl.pathname)
+  const isAuthPage = [
+    '/auth/login',
+    '/auth/signup',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+  ].includes(req.nextUrl.pathname)
 
-  // If user is signed in and tries to access auth pages, redirect to home
-  if (session && isAuthPath) {
+  // If user is signed in and tries to access auth page, redirect to home
+  if (session && isAuthPage) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // If user is not signed in and tries to access protected routes, redirect to login
-  if (!session && !isAuthPath) {
+  // If user is not signed in and tries to access protected page, redirect to login
+  if (!session && !isAuthPage) {
     return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 
@@ -87,13 +92,12 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
+     * - public files (public folder)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
