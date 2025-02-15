@@ -1,8 +1,9 @@
 import { LoginForm } from "@/components/auth/LoginForm"
 
 export default function LoginPage() {
+  console.log("Login page rendering") // Debug log
   return (
-    <>
+    <div className="flex flex-col space-y-6">
       <div className="flex flex-col space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">
           Welcome back
@@ -12,6 +13,6 @@ export default function LoginPage() {
         </p>
       </div>
       <LoginForm />
-    </>
+    </div>
   )
 } 
